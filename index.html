@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookkeeping Tracker</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Firebase SDKs -->
+    <script type="module" src="assets/firebase.js"></script>
+    <script type="module" src="assets/scripts.js"></script>
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Bookkeeping Tracker</h1>
+
+        <!-- Google Sign-In and Logout Buttons -->
+        <div class="text-center mb-4">
+            <button class="btn btn-primary" onclick="loginWithGoogle()">Sign in with Google</button>
+            <button class="btn btn-secondary" onclick="logout()">Logout</button>
+        </div>
+
+        <p id="user-info" class="text-center"></p>
+        <p id="status" class="text-center"></p>
+
+        <hr>
+
+        <!-- Tabs for Expenses, Miles, and Hours -->
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <a class="nav-link active" id="expenses-tab" data-toggle="tab" href="#expenses" role="tab" aria-controls="expenses" aria-selected="true">Expenses</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" id="miles-tab" data-toggle="tab" href="#miles" role="tab" aria-controls="miles" aria-selected="false">Miles</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" id="hours-tab" data-toggle="tab" href="#hours" role="tab" aria-controls="hours" aria-selected="false">Hours</a>
+            </li>
+        </ul>
+        <div class="tab-content" id="myTabContent">
+            <div class="tab-pane fade show active" id="expenses" role="tabpanel" aria-labelledby="expenses-tab">
+                <h2 class="mt-4">Record an Expense</h2>
+                <div class="form-group">
+                    <label for="expenseDesc">Description:</label>
+                    <input type="text" class="form-control" id="expenseDesc" placeholder="Expense Description">
+                </div>
+                
+                <div class="form-group">
+                    <label for="expenseAmount">Amount ($):</label>
+                    <input type="number" class="form-control" id="expenseAmount" placeholder="Amount">
+                </div>
+
+                <button class="btn btn-success" onclick="addExpense(
+                    document.getElementById('expenseDesc').value,
+                    parseFloat(document.getElementById('expenseAmount').value)
+                )">Add Expense</button>
+
+                <h2 class="mt-4">Expense List</h2>
+                <button class="btn btn-info mb-3" onclick="getExpenses()">View Expenses (Check Console)</button>
+
+                <ul id="expenseList" class="list-group"></ul>
+            </div>
+            <div class="tab-pane fade" id="miles" role="tabpanel" aria-labelledby="miles-tab">
+                <h2 class="mt-4">Record Miles</h2>
+                <div class="form-group">
+                    <label for="milesDesc">Description:</label>
+                    <input type="text" class="form-control" id="milesDesc" placeholder="Trip Description">
+                </div>
+                
+                <div class="form-group">
+                    <label for="milesDriven">Miles Driven:</label>
+                    <input type="number" class="form-control" id="milesDriven" placeholder="Miles">
+                </div>
+
+                <button class="btn btn-success" onclick="addMiles(
+                    document.getElementById('milesDesc').value,
+                    parseFloat(document.getElementById('milesDriven').value)
+                )">Add Miles</button>
+
+                <h2 class="mt-4">Miles List</h2>
+                <button class="btn btn-info mb-3" onclick="getMiles()">View Miles (Check Console)</button>
+
+                <ul id="milesList" class="list-group"></ul>
+            </div>
+            <div class="tab-pane fade" id="hours" role="tabpanel" aria-labelledby="hours-tab">
+                <h2 class="mt-4">Record Hours</h2>
+                <div class="form-group">
+                    <label for="hoursDesc">Description:</label>
+                    <input type="text" class="form-control" id="hoursDesc" placeholder="Work Description">
+                </div>
+                
+                <div class="form-group">
+                    <label for="hoursWorked">Hours Worked:</label>
+                    <input type="number" class="form-control" id="hoursWorked" placeholder="Hours">
+                </div>
+
+                <button class="btn btn-success" onclick="addHours(
+                    document.getElementById('hoursDesc').value,
+                    parseFloat(document.getElementById('hoursWorked').value)
+                )">Add Hours</button>
+
+                <h2 class="mt-4">Hours List</h2>
+                <button class="btn btn-info mb-3" onclick="getHours()">View Hours (Check Console)</button>
+
+                <ul id="hoursList" class="list-group"></ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
