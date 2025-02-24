@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookkeeping Tracker</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="css/styles.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Bookkeeping Tracker</h1>
+
+        <hr>
+
+        <!-- Tabs for Expenses, Miles, and Hours -->
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <a class="nav-link active" id="expenses-tab" data-toggle="tab" href="#expenses" role="tab">Expenses</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" id="miles-tab" data-toggle="tab" href="#miles" role="tab">Miles</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" id="hours-tab" data-toggle="tab" href="#hours" role="tab">Hours</a>
+            </li>
+        </ul>
+        <div class="tab-content" id="myTabContent">
+            <!-- Expenses Tab -->
+            <div class="tab-pane fade show active" id="expenses" role="tabpanel">
+                <div class="mt-4">
+                    <h2>Record an Expense</h2>
+                    <form id="expenseForm" class="mb-4">
+                        <div class="form-group">
+                            <label for="expenseDesc">Description:</label>
+                            <input type="text" class="form-control" id="expenseDesc" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="expenseAmount">Amount ($):</label>
+                            <input type="number" class="form-control" id="expenseAmount" step="0.01" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Expense</button>
+                    </form>
+                    <h3>Expense List</h3>
+                    <ul id="expenseList" class="list-group"></ul>
+                </div>
+            </div>
+
+            <!-- Miles Tab -->
+            <div class="tab-pane fade" id="miles" role="tabpanel">
+                <div class="mt-4">
+                    <h2>Record Miles</h2>
+                    <form id="milesForm" class="mb-4">
+                        <div class="form-group">
+                            <label for="milesDesc">Description:</label>
+                            <input type="text" class="form-control" id="milesDesc" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="milesAmount">Miles:</label>
+                            <input type="number" class="form-control" id="milesAmount" step="0.1" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Miles</button>
+                    </form>
+                    <h3>Miles List</h3>
+                    <ul id="milesList" class="list-group"></ul>
+                </div>
+            </div>
+
+            <!-- Hours Tab -->
+            <div class="tab-pane fade" id="hours" role="tabpanel">
+                <div class="mt-4">
+                    <h2>Record Hours</h2>
+                    <form id="hoursForm" class="mb-4">
+                        <div class="form-group">
+                            <label for="hoursDesc">Description:</label>
+                            <input type="text" class="form-control" id="hoursDesc" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="hoursAmount">Hours:</label>
+                            <input type="number" class="form-control" id="hoursAmount" step="0.5" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Hours</button>
+                    </form>
+                    <h3>Hours List</h3>
+                    <ul id="hoursList" class="list-group"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html> 
