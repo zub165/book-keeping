@@ -1,34 +1,6 @@
 // Use the global app instance
 const app = window.app;
 
-// Add session management
-let currentSession = null;
-
-async function checkSession() {
-    try {
-        const { data: { session }, error } = await app.supabase.auth.getSession();
-        if (error) throw error;
-        
-        currentSession = session;
-        return session;
-    } catch (error) {
-        console.error('Session check error:', error);
-        return null;
-    }
-}
-
-// Update auth state change handler
-app.supabase.auth.onAuthStateChange(async (event, session) => {
-    console.log('Auth state change:', event, session);
-    currentSession = session;
-    
-    if (event === 'SIGNED_IN') {
-        await initializeApp(session);
-    } else if (event === 'SIGNED_OUT') {
-        resetAppState();
-    }
-});
-
 // Handle registration
 async function handleRegister(event) {
     event.preventDefault();
@@ -43,7 +15,10 @@ async function handleRegister(event) {
             email,
             password,
             options: {
-                data: { full_name: fullName }
+                data: { 
+                    full_name: fullName,
+                    avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=random`
+                }
             }
         });
 
@@ -64,7 +39,7 @@ async function handleRegister(event) {
 
         if (familyError) throw familyError;
 
-        app.utils.showAlert('Registration successful! Please check your email.', 'success');
+        app.utils.showAlert('Registration successful! Please check your email for verification.', 'success');
         // Switch to login tab
         document.querySelector('[data-bs-target="#loginTab"]').click();
     } catch (error) {
@@ -94,8 +69,8 @@ async function handleLogin(event) {
         if (error) throw error;
 
         if (data.user) {
+            app.state.currentUser = data.user;
             app.utils.showAlert('Successfully logged in!', 'success');
-            window.location.reload();
         }
     } catch (error) {
         console.error('Login error:', error);
@@ -107,7 +82,6 @@ async function handleLogin(event) {
 async function handleLogout() {
     try {
         await app.supabase.auth.signOut();
-        window.location.reload();
     } catch (error) {
         console.error('Logout error:', error);
         app.utils.showAlert(error.message, 'danger');
@@ -123,12 +97,4 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loginForm) loginForm.addEventListener('submit', handleLogin);
     if (registerForm) registerForm.addEventListener('submit', handleRegister);
     if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
-
-    // Check for existing session
-    app.supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
-            document.getElementById('authContainer').classList.add('d-none');
-            document.getElementById('appContainer').classList.remove('d-none');
-        }
-    });
 }); 

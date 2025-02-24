@@ -1,11 +1,9 @@
-// Use the global app instance
-const app = window.app;
+// Use the existing global app instance without redeclaring
+const { supabase, state, utils } = window.app;
 
-// Global state
+// Global state (local to this module)
 let currentUser = null;
 let currentFamilyMember = null;
-
-// Add loading state
 let isLoading = false;
 
 // Add loading indicator function
@@ -49,29 +47,63 @@ const appState = {
     }
 };
 
-function resetAppState() {
-    appState.reset();
-    document.getElementById('authContainer').classList.remove('d-none');
-    document.getElementById('appContainer').classList.add('d-none');
+// Initialize the app
+function initializeApp(session) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (session) {
+                currentUser = session.user;
+                state.currentUser = session.user;
+                await updateUserProfile(session.user);
+                await loadFamilyMembers();
+                await updateStatistics();
+            }
+            resolve();
+        } catch (error) {
+            console.error('Error initializing app:', error);
+            utils.showAlert('Error initializing application', 'danger');
+            reject(error);
+        }
+    });
 }
 
-async function initializeApp(session) {
-    try {
-        if (session) {
-            app.state.currentUser = session.user;
-            await updateUserProfile(session.user);
-            await loadFamilyMembers();
-            await updateStatistics();
-            
-            // Show app container and hide auth container
-            document.getElementById('authContainer').classList.add('d-none');
-            document.getElementById('appContainer').classList.remove('d-none');
-        }
-    } catch (error) {
-        console.error('Error initializing app:', error);
-        app.utils.showAlert('Error initializing application', 'danger');
-    }
+// Reset app state
+function resetAppState() {
+    currentUser = null;
+    currentFamilyMember = null;
+    state.currentUser = null;
+    state.currentFamilyMember = null;
+    
+    // Reset UI elements
+    const forms = ['expenseForm', 'milesForm', 'hoursForm'];
+    forms.forEach(formId => {
+        const form = document.getElementById(formId);
+        if (form) form.reset();
+    });
+    
+    // Clear lists
+    ['expenseList', 'milesList', 'hoursList'].forEach(listId => {
+        const list = document.getElementById(listId);
+        if (list) list.innerHTML = '';
+    });
+    
+    // Reset statistics
+    document.getElementById('totalExpenses').textContent = '$0.00';
+    document.getElementById('totalMiles').textContent = '0 miles';
+    document.getElementById('totalHours').textContent = '0 hours';
+    
+    // Reset family member select
+    const select = document.getElementById('familyMemberSelect');
+    if (select) select.innerHTML = '<option value="">Select Family Member</option>';
 }
+
+// Make functions available globally
+window.appFunctions = {
+    initialize: initializeApp,
+    reset: resetAppState,
+    addFamilyMember: addFamilyMember,
+    handleAddFamilyMember: handleAddFamilyMember
+};
 
 document.addEventListener('DOMContentLoaded', () => {
     // Set up form submissions
@@ -86,19 +118,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
 
     // Check for existing session
-    app.supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
         if (session) {
             initializeApp(session);
         }
     });
 
     // Listen for auth state changes
-    app.supabase.auth.onAuthStateChange((event, session) => {
+    supabase.auth.onAuthStateChange((event, session) => {
         if (event === 'SIGNED_IN') {
             initializeApp(session);
         } else if (event === 'SIGNED_OUT') {
             // Clear state
-            app.state.currentUser = null;
+            state.currentUser = null;
             currentFamilyMember = null;
             
             // Reset UI
@@ -128,7 +160,7 @@ async function loadExpenses() {
     if (!currentFamilyMember) return;
 
     try {
-        const { data, error } = await app.supabase
+        const { data, error } = await supabase
             .from('expenses')
             .select('*')
             .eq('family_member_id', currentFamilyMember.id)
@@ -164,13 +196,13 @@ async function loadExpenses() {
         }
     } catch (error) {
         console.error('Error loading expenses:', error);
-        app.utils.showAlert('Error loading expenses', 'danger');
+        utils.showAlert('Error loading expenses', 'danger');
     }
 }
 
 // Add this function to get the current session
 async function getCurrentSession() {
-    const { data: { session }, error } = await app.supabase.auth.getSession();
+    const { data: { session }, error } = await supabase.auth.getSession();
     if (error) throw error;
     return session;
 }
@@ -191,33 +223,29 @@ async function handleExpenseSubmit(event) {
     if (isLoading) return;
     
     if (!currentFamilyMember) {
-        app.utils.showAlert('Please select a family member first', 'warning');
+        utils.showAlert('Please select a family member first', 'warning');
         return;
     }
 
     const form = event.target;
     const description = form.querySelector('#expenseDesc').value.trim();
-    const amount = form.querySelector('#expenseAmount').value;
+    const amount = parseFloat(form.querySelector('#expenseAmount').value);
 
     if (!validateDescription(description)) {
-        app.utils.showAlert('Description must be between 3 and 200 characters', 'warning');
+        utils.showAlert('Description must be between 3 and 200 characters', 'warning');
         return;
     }
 
     if (!validateAmount(amount)) {
-        app.utils.showAlert('Amount must be between 0 and 1,000,000', 'warning');
+        utils.showAlert('Amount must be between 0 and 1,000,000', 'warning');
         return;
     }
 
     try {
         setLoading(true);
-        console.log('Submitting expense:', {
-            description,
-            amount,
-            family_member_id: currentFamilyMember.id
-        });
+        console.log('Submitting expense for family member:', currentFamilyMember);
 
-        const { data, error } = await app.supabase
+        const { data, error } = await supabase
             .from('expenses')
             .insert([{ 
                 description, 
@@ -233,18 +261,16 @@ async function handleExpenseSubmit(event) {
         }
 
         console.log('Expense added:', data);
-        app.utils.showAlert('Expense added successfully!', 'success');
+        utils.showAlert('Expense added successfully!', 'success');
         form.reset();
         
-        // Reload data and update statistics
         await Promise.all([
             loadExpenses(),
             updateStatistics()
         ]);
     } catch (error) {
         console.error('Error adding expense:', error);
-        app.utils.showAlert(`Error: ${error.message}`, 'danger');
-        // Don't reset the form on error
+        utils.showAlert(`Error: ${error.message}`, 'danger');
     } finally {
         setLoading(false);
     }
@@ -255,7 +281,7 @@ async function loadMiles() {
     if (!currentFamilyMember) return;
 
     try {
-        const { data, error } = await app.supabase
+        const { data, error } = await supabase
             .from('miles')
             .select('*')
             .eq('family_member_id', currentFamilyMember.id)
@@ -278,7 +304,7 @@ async function loadMiles() {
         }
     } catch (error) {
         console.error('Error loading miles:', error);
-        app.utils.showAlert(error.message, 'danger');
+        utils.showAlert(error.message, 'danger');
     }
 }
 
@@ -286,7 +312,7 @@ async function handleMilesSubmit(event) {
     event.preventDefault();
     
     if (!currentFamilyMember) {
-        app.utils.showAlert('Please select a family member first', 'warning');
+        utils.showAlert('Please select a family member first', 'warning');
         return;
     }
 
@@ -295,12 +321,12 @@ async function handleMilesSubmit(event) {
     const miles = parseFloat(form.querySelector('#milesAmount').value);
 
     if (!description || isNaN(miles)) {
-        app.utils.showAlert('Please enter valid description and miles', 'danger');
+        utils.showAlert('Please enter valid description and miles', 'danger');
         return;
     }
 
     try {
-        const { data, error } = await app.supabase
+        const { data, error } = await supabase
             .from('miles')
             .insert([{ 
                 description, 
@@ -312,7 +338,7 @@ async function handleMilesSubmit(event) {
 
         if (error) throw error;
 
-        app.utils.showAlert('Miles added successfully!', 'success');
+        utils.showAlert('Miles added successfully!', 'success');
         form.reset();
         
         // Reload data and update statistics
@@ -322,7 +348,7 @@ async function handleMilesSubmit(event) {
         ]);
     } catch (error) {
         console.error('Error adding miles:', error);
-        app.utils.showAlert(error.message, 'danger');
+        utils.showAlert(error.message, 'danger');
         // Don't reset the form on error
     }
 }
@@ -332,7 +358,7 @@ async function loadHours() {
     if (!currentFamilyMember) return;
 
     try {
-        const { data, error } = await app.supabase
+        const { data, error } = await supabase
             .from('hours')
             .select('*')
             .eq('family_member_id', currentFamilyMember.id)
@@ -355,7 +381,7 @@ async function loadHours() {
         }
     } catch (error) {
         console.error('Error loading hours:', error);
-        app.utils.showAlert(error.message, 'danger');
+        utils.showAlert(error.message, 'danger');
     }
 }
 
@@ -363,7 +389,7 @@ async function handleHoursSubmit(event) {
     event.preventDefault();
     
     if (!currentFamilyMember) {
-        app.utils.showAlert('Please select a family member first', 'warning');
+        utils.showAlert('Please select a family member first', 'warning');
         return;
     }
 
@@ -372,12 +398,12 @@ async function handleHoursSubmit(event) {
     const hours = parseFloat(form.querySelector('#hoursAmount').value);
 
     if (!description || isNaN(hours)) {
-        app.utils.showAlert('Please enter valid description and hours', 'danger');
+        utils.showAlert('Please enter valid description and hours', 'danger');
         return;
     }
 
     try {
-        const { data, error } = await app.supabase
+        const { data, error } = await supabase
             .from('hours')
             .insert([{ 
                 description, 
@@ -389,7 +415,7 @@ async function handleHoursSubmit(event) {
 
         if (error) throw error;
 
-        app.utils.showAlert('Hours added successfully!', 'success');
+        utils.showAlert('Hours added successfully!', 'success');
         form.reset();
         
         // Reload data and update statistics
@@ -399,7 +425,7 @@ async function handleHoursSubmit(event) {
         ]);
     } catch (error) {
         console.error('Error adding hours:', error);
-        app.utils.showAlert(error.message, 'danger');
+        utils.showAlert(error.message, 'danger');
         // Don't reset the form on error
     }
 }
@@ -407,19 +433,40 @@ async function handleHoursSubmit(event) {
 // Family member functions
 async function loadFamilyMembers() {
     try {
-        return await retryOperation(async () => {
-            const { data, error } = await app.supabase
-                .from('family_members')
-                .select('*')
-                .eq('user_id', app.state.currentUser.id);
+        const { data, error } = await supabase
+            .from('family_members')
+            .select('*')
+            .eq('user_id', state.currentUser.id)
+            .order('created_at', { ascending: true });
 
-            if (error) throw error;
-            return data;
-        });
+        if (error) throw error;
+
+        const select = document.getElementById('familyMemberSelect');
+        if (select && Array.isArray(data)) {
+            select.innerHTML = '<option value="">Select Family Member</option>' +
+                data.map(member => `
+                    <option value="${member.id}">${member.name} (${member.relation})</option>
+                `).join('');
+
+            // Set the first family member as default if available
+            if (data.length > 0) {
+                currentFamilyMember = data[0];
+                select.value = currentFamilyMember.id;
+                await Promise.all([
+                    loadExpenses(),
+                    loadMiles(),
+                    loadHours(),
+                    updateStatistics()
+                ]);
+            }
+
+            select.addEventListener('change', (e) => {
+                handleFamilyMemberChange(e.target.value, data);
+            });
+        }
     } catch (error) {
         console.error('Error loading family members:', error);
-        app.utils.showAlert('Failed to load family members', 'danger');
-        return [];
+        utils.showAlert('Failed to load family members', 'danger');
     }
 }
 
@@ -436,15 +483,15 @@ async function updateStatistics() {
     try {
         // Get all data in parallel
         const [expenseResult, milesResult, hoursResult] = await Promise.all([
-            app.supabase
+            supabase
                 .from('expenses')
                 .select('amount')
                 .eq('family_member_id', currentFamilyMember.id),
-            app.supabase
+            supabase
                 .from('miles')
                 .select('miles')
                 .eq('family_member_id', currentFamilyMember.id),
-            app.supabase
+            supabase
                 .from('hours')
                 .select('hours')
                 .eq('family_member_id', currentFamilyMember.id)
@@ -466,7 +513,7 @@ async function updateStatistics() {
         document.getElementById('totalHours').textContent = `${totalHours.toFixed(1)} hours`;
     } catch (error) {
         console.error('Error updating statistics:', error);
-        app.utils.showAlert('Error updating statistics', 'danger');
+        utils.showAlert('Error updating statistics', 'danger');
     }
 }
 
@@ -495,7 +542,7 @@ async function handleFamilyMemberChange(memberId, members) {
         }
     } catch (error) {
         console.error('Error loading data:', error);
-        app.utils.showAlert('Error loading data', 'danger');
+        utils.showAlert('Error loading data', 'danger');
     }
 }
 
@@ -518,14 +565,14 @@ async function updateUserProfile(user) {
 // Update handleLogout function
 async function handleLogout() {
     try {
-        await app.supabase.auth.signOut();
+        await supabase.auth.signOut();
         // Show auth container and hide app container
         document.getElementById('authContainer').classList.remove('d-none');
         document.getElementById('appContainer').classList.add('d-none');
         window.location.reload();
     } catch (error) {
         console.error('Logout error:', error);
-        app.utils.showAlert(error.message, 'danger');
+        utils.showAlert(error.message, 'danger');
     }
 }
 
@@ -594,5 +641,59 @@ const cache = {
         this.timeouts.clear();
     }
 };
+
+// Add new family member function
+async function addFamilyMember(name, relation) {
+    try {
+        const { data, error } = await supabase
+            .from('family_members')
+            .insert([
+                {
+                    user_id: state.currentUser.id,
+                    name: name,
+                    relation: relation,
+                    created_at: new Date().toISOString()
+                }
+            ])
+            .select();
+
+        if (error) throw error;
+
+        utils.showAlert('Family member added successfully!', 'success');
+        await loadFamilyMembers();
+        return data[0];
+    } catch (error) {
+        console.error('Error adding family member:', error);
+        utils.showAlert(error.message, 'danger');
+        return null;
+    }
+}
+
+// Add this function to handle the Add Family Member modal
+async function handleAddFamilyMember() {
+    const nameInput = document.getElementById('familyMemberName');
+    const relationInput = document.getElementById('familyMemberRelation');
+    const modal = bootstrap.Modal.getInstance(document.getElementById('addFamilyMemberModal'));
+
+    const name = nameInput.value.trim();
+    const relation = relationInput.value;
+
+    if (!name || !relation) {
+        utils.showAlert('Please fill in all fields', 'warning');
+        return;
+    }
+
+    try {
+        const newMember = await addFamilyMember(name, relation);
+        if (newMember) {
+            modal.hide();
+            nameInput.value = '';
+            relationInput.value = '';
+        }
+    } catch (error) {
+        console.error('Error adding family member:', error);
+        utils.showAlert(error.message, 'danger');
+    }
+}
 
 // Rest of your app.js code... 
