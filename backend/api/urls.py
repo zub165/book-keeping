@@ -26,4 +26,9 @@ urlpatterns = [
     
     # Statistics endpoint
     path('statistics/', views.statistics, name='statistics'),
+    
+    # Export/Import endpoints
+    path('export/', views.export_transactions, name='export_transactions'),
+    path('import/', views.import_transactions, name='import_transactions'),
+    path('tax-report/', views.tax_report, name='tax_report'),
 ]

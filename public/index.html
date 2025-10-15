@@ -184,7 +184,7 @@
 
         <!-- Statistics Cards -->
         <div class="row mb-4">
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="card stats-card">
                     <div class="card-body">
                         <h5 class="card-title">Total Expenses</h5>
@@ -192,7 +192,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="card stats-card">
                     <div class="card-body">
                         <h5 class="card-title">Total Miles</h5>
@@ -200,11 +200,72 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="card stats-card">
                     <div class="card-body">
                         <h5 class="card-title">Total Hours</h5>
                         <h3 id="totalHours">0 hours</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Tax Deductions</h5>
+                        <h3 id="totalDeductions">$0.00</h3>
+                        <small class="text-muted">AI-Powered</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export/Import Controls -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-file-excel text-success"></i> Export/Import & Tax Tools
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <button class="btn btn-success w-100 mb-2" onclick="exportToExcel()">
+                                    <i class="fas fa-download"></i> Export Excel
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-info w-100 mb-2" onclick="exportToCSV()">
+                                    <i class="fas fa-file-csv"></i> Export CSV
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-warning w-100 mb-2" onclick="document.getElementById('importFile').click()">
+                                    <i class="fas fa-upload"></i> Import Data
+                                </button>
+                                <input type="file" id="importFile" accept=".xlsx,.csv" style="display: none;" onchange="importTransactions(this)">
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-primary w-100 mb-2" onclick="generateTaxReport()">
+                                    <i class="fas fa-calculator"></i> Tax Report
+                                </button>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">Export Year:</label>
+                                <select class="form-select" id="exportYear">
+                                    <option value="2024">2024</option>
+                                    <option value="2025" selected>2025</option>
+                                    <option value="2023">2023</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">AI Tax Analysis:</label>
+                                <div id="taxAnalysis" class="text-muted">
+                                    <small>Click "Tax Report" to see AI-powered tax categorization</small>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

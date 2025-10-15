@@ -509,3 +509,192 @@ async function handleAddFamilyMember() {
         app.utils.showAlert(error.message, 'danger');
     }
 }
+
+// Export/Import Functions
+async function exportToExcel() {
+    try {
+        const year = document.getElementById('exportYear').value;
+        const response = await fetch(`${window.APP_CONFIG?.API_BASE_URL}/export/?format=excel&year=${year}`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            }
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `family_transactions_${year}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            app.utils.showAlert('Excel file exported successfully!', 'success');
+        } else {
+            throw new Error('Export failed');
+        }
+    } catch (error) {
+        console.error('Export error:', error);
+        app.utils.showAlert('Export failed: ' + error.message, 'danger');
+    }
+}
+
+async function exportToCSV() {
+    try {
+        const year = document.getElementById('exportYear').value;
+        const response = await fetch(`${window.APP_CONFIG?.API_BASE_URL}/export/?format=csv&year=${year}`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            }
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `family_transactions_${year}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            app.utils.showAlert('CSV file exported successfully!', 'success');
+        } else {
+            throw new Error('Export failed');
+        }
+    } catch (error) {
+        console.error('Export error:', error);
+        app.utils.showAlert('Export failed: ' + error.message, 'danger');
+    }
+}
+
+async function importTransactions(fileInput) {
+    if (!fileInput.files[0]) return;
+    
+    const file = fileInput.files[0];
+    const familyMemberSelect = document.getElementById('familyMemberSelect');
+    
+    if (!familyMemberSelect.value) {
+        app.utils.showAlert('Please select a family member first', 'warning');
+        return;
+    }
+    
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('family_member_id', familyMemberSelect.value);
+        
+        const response = await fetch(`${window.APP_CONFIG?.API_BASE_URL}/import/`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            },
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            app.utils.showAlert(result.message, 'success');
+            if (result.errors && result.errors.length > 0) {
+                console.warn('Import errors:', result.errors);
+            }
+            // Reload data
+            await loadFamilyMembers();
+            await loadExpenses();
+            await loadMiles();
+            await loadHours();
+            await updateStatistics();
+        } else {
+            throw new Error(result.error || 'Import failed');
+        }
+    } catch (error) {
+        console.error('Import error:', error);
+        app.utils.showAlert('Import failed: ' + error.message, 'danger');
+    }
+}
+
+async function generateTaxReport() {
+    try {
+        const year = document.getElementById('exportYear').value;
+        const response = await fetch(`${window.APP_CONFIG?.API_BASE_URL}/tax-report/?year=${year}`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            }
+        });
+        
+        const taxData = await response.json();
+        
+        if (response.ok) {
+            displayTaxReport(taxData);
+        } else {
+            throw new Error('Tax report generation failed');
+        }
+    } catch (error) {
+        console.error('Tax report error:', error);
+        app.utils.showAlert('Tax report failed: ' + error.message, 'danger');
+    }
+}
+
+function displayTaxReport(taxData) {
+    const taxAnalysis = document.getElementById('taxAnalysis');
+    
+    let html = `
+        <div class="tax-report">
+            <h6>AI Tax Analysis for ${taxData.year}</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <strong>Total Deductible: $${taxData.total_deductible.toFixed(2)}</strong>
+                </div>
+                <div class="col-md-6">
+                    <strong>Forms Needed: ${taxData.forms_needed.join(', ')}</strong>
+                </div>
+            </div>
+            <div class="mt-2">
+                <h6>Categories:</h6>
+                <ul class="list-unstyled">
+    `;
+    
+    for (const [category, data] of Object.entries(taxData.categories)) {
+        html += `
+            <li>
+                <strong>${category}:</strong> 
+                $${data.total.toFixed(2)} 
+                (${data.count} transactions)
+                ${data.deductible > 0 ? `<span class="text-success">- $${data.deductible.toFixed(2)} deductible</span>` : ''}
+            </li>
+        `;
+    }
+    
+    html += `
+                </ul>
+            </div>
+            <div class="mt-2">
+                <h6>AI Recommendations:</h6>
+                <ul>
+    `;
+    
+    taxData.recommendations.forEach(rec => {
+        html += `<li>${rec}</li>`;
+    });
+    
+    html += `
+                </ul>
+            </div>
+        </div>
+    `;
+    
+    taxAnalysis.innerHTML = html;
+    
+    // Update tax deductions display
+    document.getElementById('totalDeductions').textContent = `$${taxData.total_deductible.toFixed(2)}`;
+    
+    app.utils.showAlert('Tax report generated successfully!', 'success');
+}
+
+// Make export/import functions globally available
+window.exportToExcel = exportToExcel;
+window.exportToCSV = exportToCSV;
+window.importTransactions = importTransactions;
+window.generateTaxReport = generateTaxReport;
