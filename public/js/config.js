@@ -3,7 +3,7 @@ const CONFIG = {
     // API Configuration
     API_BASE_URL: window.location.hostname === 'localhost' 
         ? 'http://localhost:3017/api'  // Local development
-        : 'http://208.109.215.53:3017/api',  // Production - your GoDaddy server (Family Bookkeeping)
+        : 'https://api.mywaitime.com/family-api',  // Production - Family Bookkeeping via Nginx HTTPS routing
     
     // App Configuration
     APP_NAME: 'Family Bookkeeping',
@@ -13,7 +13,7 @@ const CONFIG = {
     FEATURES: {
         REGISTRATION: true,
         STATISTICS: true,
-        EXPORT: false
+        EXPORT: true
     }
 };
 
