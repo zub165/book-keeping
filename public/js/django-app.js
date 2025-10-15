@@ -358,9 +358,11 @@ async function loadFamilyMembers() {
         const select = document.getElementById('familyMemberSelect');
         if (select && Array.isArray(data)) {
             select.innerHTML = '<option value="">Select Family Member</option>' +
-                data.map(member => `
-                    <option value="${member.id}">${member.name} (${member.relation})</option>
-                `).join('');
+                data.map(member => {
+                    const status = member.is_registered ? '✓ Registered' : '○ Pending';
+                    const emailInfo = member.email ? ` - ${member.email}` : '';
+                    return `<option value="${member.id}">${member.name} (${member.relation}) - ${status}${emailInfo}</option>`;
+                }).join('');
 
             // Set the first family member as default if available
             if (data.length > 0) {
@@ -454,22 +456,14 @@ async function updateUserProfile(user) {
 }
 
 // Add new family member function
-async function addFamilyMember(name, relation) {
+async function addFamilyMember(memberData) {
     try {
-        const memberData = {
-            name: name,
-            relation: relation
-        };
-
         const data = await window.djangoData.createFamilyMember(memberData);
-
-        app.utils.showAlert('Family member added successfully!', 'success');
         await loadFamilyMembers();
         return data;
     } catch (error) {
         console.error('Error adding family member:', error);
-        app.utils.showAlert(error.message, 'danger');
-        return null;
+        throw error;
     }
 }
 
@@ -477,22 +471,38 @@ async function addFamilyMember(name, relation) {
 async function handleAddFamilyMember() {
     const nameInput = document.getElementById('familyMemberName');
     const relationInput = document.getElementById('familyMemberRelation');
+    const emailInput = document.getElementById('familyMemberEmail');
     const modal = bootstrap.Modal.getInstance(document.getElementById('addFamilyMemberModal'));
 
     const name = nameInput.value.trim();
     const relation = relationInput.value;
+    const email = emailInput.value.trim();
 
     if (!name || !relation) {
-        app.utils.showAlert('Please fill in all fields', 'warning');
+        app.utils.showAlert('Please fill in all required fields', 'warning');
         return;
     }
 
     try {
-        const newMember = await addFamilyMember(name, relation);
+        const memberData = {
+            name: name,
+            relation: relation,
+            email: email || null
+        };
+        
+        const newMember = await addFamilyMember(memberData);
         if (newMember) {
             modal.hide();
             nameInput.value = '';
             relationInput.value = '';
+            emailInput.value = '';
+            
+            // Show success message with email info
+            if (email) {
+                app.utils.showAlert(`Family member "${name}" added successfully! Email invite will be sent to ${email}`, 'success');
+            } else {
+                app.utils.showAlert(`Family member "${name}" added successfully!`, 'success');
+            }
         }
     } catch (error) {
         console.error('Error adding family member:', error);
