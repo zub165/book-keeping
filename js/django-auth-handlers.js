@@ -27,7 +27,9 @@ async function handleRegister(event) {
             password_confirm: passwordConfirm
         };
 
+        console.log('Attempting registration with data:', userData);
         const user = await window.djangoAuth.register(userData);
+        console.log('Registration successful:', user);
         window.djangoAuth.setCurrentUser(user);
         
         app.utils.showAlert('Registration successful! You are now logged in.', 'success');
@@ -39,7 +41,7 @@ async function handleRegister(event) {
         document.querySelector('[data-bs-target="#loginTab"]').click();
     } catch (error) {
         console.error('Registration error:', error);
-        app.utils.showAlert(error.message, 'danger');
+        app.utils.showAlert(`Registration failed: ${error.message}`, 'danger');
     }
 }
 
