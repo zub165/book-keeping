@@ -5,7 +5,7 @@ const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL || 'http://localhost:3015/a
 const api = {
     async request(endpoint, options = {}) {
         const url = `${API_BASE_URL}${endpoint}`;
-        const token = localStorage.getItem('access_token');
+        let token = localStorage.getItem('access_token');
         
         const defaultOptions = {
             headers: {
@@ -25,6 +25,29 @@ const api = {
         
         try {
             const response = await fetch(url, config);
+            
+            // Check if token is expired (401 Unauthorized)
+            if (response.status === 401) {
+                console.log('Token expired, attempting refresh...');
+                const refreshed = await this.refreshToken();
+                if (refreshed) {
+                    // Retry the original request with new token
+                    const newToken = localStorage.getItem('access_token');
+                    config.headers['Authorization'] = `Bearer ${newToken}`;
+                    const retryResponse = await fetch(url, config);
+                    const retryData = await retryResponse.json();
+                    
+                    if (!retryResponse.ok) {
+                        throw new Error(retryData.error || retryData.detail || 'Request failed after token refresh');
+                    }
+                    return retryData;
+                } else {
+                    // Refresh failed, redirect to login
+                    this.handleTokenExpired();
+                    throw new Error('Session expired. Please login again.');
+                }
+            }
+            
             const data = await response.json();
             
             if (!response.ok) {
@@ -35,6 +58,59 @@ const api = {
         } catch (error) {
             console.error('API request failed:', error);
             throw error;
+        }
+    },
+    
+    async refreshToken() {
+        try {
+            const refreshToken = localStorage.getItem('refresh_token');
+            if (!refreshToken) {
+                console.log('No refresh token available');
+                return false;
+            }
+            
+            const response = await fetch(`${API_BASE_URL}/auth/refresh/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ refresh: refreshToken })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                localStorage.setItem('access_token', data.access);
+                console.log('Token refreshed successfully');
+                return true;
+            } else {
+                console.log('Token refresh failed - endpoint not available yet');
+                return false;
+            }
+        } catch (error) {
+            console.error('Token refresh error:', error);
+            return false;
+        }
+    },
+    
+    handleTokenExpired() {
+        console.log('Handling token expiration...');
+        // Clear all auth data
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user');
+        
+        // Show alert to user
+        if (window.app && window.app.utils) {
+            window.app.utils.showAlert('Your session has expired. Please login again.', 'warning');
+        }
+        
+        // Trigger auth state change
+        window.dispatchEvent(new CustomEvent('authStateChanged'));
+        
+        // Optionally redirect to login tab
+        const loginTab = document.querySelector('[data-bs-target="#loginTab"]');
+        if (loginTab) {
+            loginTab.click();
         }
     },
     
@@ -106,17 +182,71 @@ const auth = {
     },
     
     isAuthenticated() {
-        return !!localStorage.getItem('access_token');
+        const token = localStorage.getItem('access_token');
+        if (!token) return false;
+        
+        // Check if token is expired (basic JWT decode)
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const currentTime = Math.floor(Date.now() / 1000);
+            if (payload.exp && payload.exp < currentTime) {
+                console.log('Token is expired, clearing auth data');
+                this.logout();
+                return false;
+            }
+            return true;
+        } catch (error) {
+            console.error('Error checking token:', error);
+            return false;
+        }
+    },
+    
+    // Proactive token check before making requests
+    async checkTokenAndRefresh() {
+        if (!this.isAuthenticated()) {
+            return false;
+        }
+        
+        const token = localStorage.getItem('access_token');
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const currentTime = Math.floor(Date.now() / 1000);
+            const timeUntilExpiry = payload.exp - currentTime;
+            
+            // If token expires in less than 5 minutes, try to refresh
+            if (timeUntilExpiry < 300) {
+                console.log('Token expires soon, attempting refresh...');
+                const refreshed = await window.djangoAPI.refreshToken();
+                if (!refreshed) {
+                    console.log('Token refresh failed, user will need to login again');
+                    return false;
+                }
+            }
+            return true;
+        } catch (error) {
+            console.error('Error checking token expiry:', error);
+            return false;
+        }
     }
 };
 
 // Data management functions
 const dataManager = {
     async getFamilyMembers() {
+        // Check token before making request
+        const tokenValid = await auth.checkTokenAndRefresh();
+        if (!tokenValid) {
+            throw new Error('Session expired. Please login again.');
+        }
         return api.get('/family-members/');
     },
     
     async createFamilyMember(memberData) {
+        // Check token before making request
+        const tokenValid = await auth.checkTokenAndRefresh();
+        if (!tokenValid) {
+            throw new Error('Session expired. Please login again.');
+        }
         return api.post('/family-members/', memberData);
     },
     

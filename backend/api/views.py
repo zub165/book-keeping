@@ -61,6 +61,21 @@ def login(request):
     return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
+@api_view(['POST'])
+def refresh_token(request):
+    """Refresh JWT token endpoint"""
+    refresh_token = request.data.get('refresh')
+    if not refresh_token:
+        return Response({'error': 'Refresh token required'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        refresh = RefreshToken(refresh_token)
+        new_access_token = str(refresh.access_token)
+        return Response({'access': new_access_token})
+    except Exception as e:
+        return Response({'error': 'Invalid refresh token'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def user_profile(request):
