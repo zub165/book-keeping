@@ -355,14 +355,9 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // Initialize Supabase and app state
+        // Initialize Django backend and app state
         window.app = {
-            supabase: supabase.createClient(
-                'https://nftewoyjvdulxdthfqfc.supabase.co',
-                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5mdGV3b3lqdmR1bHhkdGhmcWZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA0MTcwNDMsImV4cCI6MjA1NTk5MzA0M30._JRPbO7mJBf0OZwyxABFTeDrCS611QIY_bmPM-4SdxY'
-            ),
             state: {
                 currentUser: null,
                 currentFamilyMember: null
@@ -385,34 +380,36 @@
             }
         };
     </script>
+    <script src="js/config.js"></script>
     <script src="js/utils.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/django-auth.js"></script>
+    <script src="js/django-auth-handlers.js"></script>
+    <script src="js/django-app.js"></script>
     <script>
-        // Initialize auth state handling
-        window.app.supabase.auth.onAuthStateChange((event, session) => {
+        // Initialize auth state handling for Django backend
+        function checkAuthState() {
             const authContainer = document.getElementById('authContainer');
             const appContainer = document.getElementById('appContainer');
-
-            if (event === 'SIGNED_IN') {
-                authContainer.classList.add('d-none');
-                appContainer.classList.remove('d-none');
-                window.appFunctions.initialize(session);
-            } else if (event === 'SIGNED_OUT') {
+            
+            if (window.djangoAuth.isAuthenticated()) {
+                const user = window.djangoAuth.getCurrentUser();
+                if (user) {
+                    authContainer.classList.add('d-none');
+                    appContainer.classList.remove('d-none');
+                    window.appFunctions.initialize({ user });
+                }
+            } else {
                 authContainer.classList.remove('d-none');
                 appContainer.classList.add('d-none');
                 window.appFunctions.reset();
             }
-        });
+        }
 
-        // Check initial session
-        window.app.supabase.auth.getSession().then(({ data: { session } }) => {
-            if (session) {
-                document.getElementById('authContainer').classList.add('d-none');
-                document.getElementById('appContainer').classList.remove('d-none');
-                window.appFunctions.initialize(session);
-            }
-        });
+        // Check initial auth state
+        checkAuthState();
+        
+        // Listen for auth changes (you can trigger this manually after login/logout)
+        window.addEventListener('authStateChanged', checkAuthState);
     </script>
 
     <!-- Add this modal at the end of the body -->

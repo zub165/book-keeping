@@ -1,0 +1,100 @@
+name: Deploy Django Backend and Frontend
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        cd backend
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run Django tests
+      run: |
+        cd backend
+        python manage.py test
+      env:
+        SECRET_KEY: test-secret-key
+        DEBUG: True
+
+  deploy-backend:
+    needs: test-backend
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        cd backend
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run migrations
+      run: |
+        cd backend
+        python manage.py migrate
+      env:
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        DEBUG: False
+    
+    - name: Collect static files
+      run: |
+        cd backend
+        python manage.py collectstatic --noinput
+      env:
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        DEBUG: False
+    
+    - name: Deploy to production
+      run: |
+        echo "Deploy backend to production server"
+        # Add your deployment commands here
+        # Example: rsync, docker, or cloud deployment
+
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Install dependencies
+      run: |
+        npm install
+    
+    - name: Build frontend
+      run: |
+        echo "Frontend is already built (static files)"
+    
+    - name: Deploy frontend
+      run: |
+        echo "Deploy frontend to production server"
+        # Add your deployment commands here
+        # Example: rsync, docker, or cloud deployment
