@@ -3,7 +3,7 @@ const CONFIG = {
     // API Configuration
     API_BASE_URL: window.location.hostname === 'localhost' 
         ? 'http://localhost:3017/api'  // Local development
-        : 'http://208.109.215.53:3017/api',  // Production - your GoDaddy server (Family Bookkeeping)
+        : 'https://208.109.215.53:3017/api',  // Production - your GoDaddy server (Family Bookkeeping) - HTTPS
     
     // App Configuration
     APP_NAME: 'Family Bookkeeping',
