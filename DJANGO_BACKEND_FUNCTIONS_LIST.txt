@@ -1,0 +1,395 @@
+DJANGO BACKEND FUNCTIONS CHECKLIST
+=====================================
+
+This file lists all the functions that need to be added or verified in your Django backend
+to fix the current issues and make the Family Bookkeeping application fully functional.
+
+1. AUTHENTICATION FUNCTIONS
+============================
+
+These functions should exist in api/views.py:
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def register(request):
+    """
+    User registration function
+    - Accepts: username, email, password, first_name, last_name
+    - Returns: user data and JWT tokens
+    - Status: ✅ SHOULD EXIST
+    """
+
+@api_view(['POST']) 
+@permission_classes([AllowAny])
+def login(request):
+    """
+    User login function
+    - Accepts: username/email, password
+    - Returns: user data and JWT tokens
+    - Status: ✅ SHOULD EXIST
+    """
+
+@api_view(['POST'])
+def refresh_token(request):
+    """
+    JWT token refresh function
+    - Accepts: refresh token
+    - Returns: new access token
+    - Status: ✅ SHOULD EXIST
+    """
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_profile(request):
+    """
+    Get user profile information
+    - Returns: current user data
+    - Status: ✅ SHOULD EXIST
+    """
+
+2. FAMILY MEMBER FUNCTIONS
+==========================
+
+These functions should exist in api/views.py:
+
+class FamilyMemberListCreateView(APIView):
+    """
+    Family member list and create operations
+    - GET: List all family members for the user
+    - POST: Create new family member with email field
+    - Status: ✅ SHOULD EXIST
+    """
+
+class FamilyMemberDetailView(APIView):
+    """
+    Family member detail operations
+    - GET: Get specific family member
+    - PUT: Update family member
+    - DELETE: Delete family member
+    - Status: ✅ SHOULD EXIST
+    """
+
+3. TRANSACTION FUNCTIONS
+========================
+
+These functions should exist in api/views.py:
+
+class ExpenseListCreateView(APIView):
+    """
+    Expense list and create operations
+    - GET: List expenses for family member
+    - POST: Create new expense
+    - Status: ✅ SHOULD EXIST
+    """
+
+class ExpenseDetailView(APIView):
+    """
+    Expense detail operations
+    - GET: Get specific expense
+    - PUT: Update expense
+    - DELETE: Delete expense
+    - Status: ✅ SHOULD EXIST
+    """
+
+class MileListCreateView(APIView):
+    """
+    Mile list and create operations
+    - GET: List miles for family member
+    - POST: Create new mile entry
+    - Status: ✅ SHOULD EXIST
+    """
+
+class MileDetailView(APIView):
+    """
+    Mile detail operations
+    - GET: Get specific mile entry
+    - PUT: Update mile entry
+    - DELETE: Delete mile entry
+    - Status: ✅ SHOULD EXIST
+    """
+
+class HourListCreateView(APIView):
+    """
+    Hour list and create operations
+    - GET: List hours for family member
+    - POST: Create new hour entry
+    - Status: ✅ SHOULD EXIST
+    """
+
+class HourDetailView(APIView):
+    """
+    Hour detail operations
+    - GET: Get specific hour entry
+    - PUT: Update hour entry
+    - DELETE: Delete hour entry
+    - Status: ✅ SHOULD EXIST
+    """
+
+4. STATISTICS FUNCTION
+======================
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def statistics(request):
+    """
+    Calculate family statistics
+    - Returns: expense totals, mile totals, hour totals
+    - Status: ✅ SHOULD EXIST
+    """
+
+5. MISSING: EXPORT/IMPORT FUNCTIONS
+===================================
+
+These functions need to be added to api/views.py:
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def export_transactions(request):
+    """
+    Export transactions to Excel/CSV
+    - Parameters: format (excel/csv), year
+    - Returns: Excel/CSV file download
+    - Uses: pandas, openpyxl
+    - Status: 🚨 MISSING - NEEDS TO BE ADDED
+    """
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def import_transactions(request):
+    """
+    Import transactions from Excel/CSV
+    - Parameters: file, family_member_id
+    - Returns: import results and errors
+    - Uses: pandas, openpyxl
+    - Status: 🚨 MISSING - NEEDS TO BE ADDED
+    """
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def tax_report(request):
+    """
+    Generate AI tax report
+    - Parameters: year
+    - Returns: tax analysis with AI categorization
+    - Uses: AI categorization logic
+    - Status: 🚨 MISSING - NEEDS TO BE ADDED
+    """
+
+6. MISSING: AI TAX CATEGORIZATION
+==================================
+
+This function needs to be added to api/views.py:
+
+def categorize_expense_for_tax(description, amount):
+    """
+    AI-powered tax categorization
+    - Parameters: expense description, amount
+    - Returns: tax category, deductible status, confidence, suggested form
+    - Status: 🚨 MISSING - NEEDS TO BE ADDED
+    """
+
+7. URL ROUTING
+==============
+
+These URL patterns should exist in api/urls.py:
+
+# EXISTING PATTERNS (should be working):
+path('auth/register/', views.register),
+path('auth/login/', views.login),
+path('auth/refresh/', views.refresh_token),
+path('auth/profile/', views.user_profile),
+path('family-members/', views.FamilyMemberListCreateView.as_view()),
+path('family-members/<int:pk>/', views.FamilyMemberDetailView.as_view()),
+path('expenses/', views.ExpenseListCreateView.as_view()),
+path('expenses/<int:pk>/', views.ExpenseDetailView.as_view()),
+path('miles/', views.MileListCreateView.as_view()),
+path('miles/<int:pk>/', views.MileDetailView.as_view()),
+path('hours/', views.HourListCreateView.as_view()),
+path('hours/<int:pk>/', views.HourDetailView.as_view()),
+path('statistics/', views.statistics),
+
+# MISSING PATTERNS (need to be added):
+path('export/', views.export_transactions),
+path('import/', views.import_transactions),
+path('tax-report/', views.tax_report),
+
+8. MODEL FIELDS
+===============
+
+These fields should exist in api/models.py:
+
+class FamilyMember(models.Model):
+    # EXISTING FIELDS (should be working):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    relation = models.CharField(max_length=20, choices=RELATION_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    # MISSING FIELDS (need to be added):
+    email = models.EmailField(blank=True, null=True)
+    is_registered = models.BooleanField(default=False)
+
+9. SERIALIZER FIELDS
+====================
+
+These fields should exist in api/serializers.py:
+
+class FamilyMemberSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FamilyMember
+        fields = [
+            'id', 'name', 'relation', 
+            'email', 'is_registered',  # MISSING FIELDS
+            'created_at', 'updated_at'
+        ]
+
+10. DEPENDENCIES
+================
+
+These packages should exist in requirements.txt:
+
+# EXISTING PACKAGES (should be installed):
+Django>=4.2.0
+djangorestframework>=3.14.0
+django-cors-headers>=4.0.0
+djangorestframework-simplejwt>=5.2.0
+
+# MISSING PACKAGES (need to be installed):
+openpyxl>=3.1.0
+pandas>=2.0.0
+python-dateutil>=2.8.0
+
+11. DATABASE MIGRATIONS
+========================
+
+These migrations need to be created and applied:
+
+# Migration for email and is_registered fields:
+python3 manage.py makemigrations api
+python3 manage.py migrate
+
+12. CORS CONFIGURATION
+======================
+
+These settings should exist in bookkeeping/settings.py:
+
+CORS_ALLOWED_ORIGINS = [
+    "https://zub165.github.io",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+13. JWT CONFIGURATION
+=====================
+
+These settings should exist in bookkeeping/settings.py:
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=24),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+}
+
+14. NGINX CONFIGURATION
+=======================
+
+This configuration should exist in /etc/nginx/sites-available/default:
+
+location /family-api/ {
+    rewrite ^/family-api/(.*)$ /$1 break;
+    proxy_pass http://localhost:3017/api/;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    
+    # CORS headers
+    add_header 'Access-Control-Allow-Origin' 'https://zub165.github.io' always;
+    add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS' always;
+    add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization' always;
+    add_header 'Access-Control-Allow-Credentials' 'true' always;
+    
+    if ($request_method = 'OPTIONS') {
+        add_header 'Access-Control-Allow-Origin' 'https://zub165.github.io';
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS';
+        add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization';
+        add_header 'Access-Control-Allow-Credentials' 'true';
+        add_header 'Access-Control-Max-Age' 1728000;
+        add_header 'Content-Type' 'text/plain; charset=utf-8';
+        add_header 'Content-Length' 0;
+        return 204;
+    }
+}
+
+15. PRIORITY FIXES
+==================
+
+CRITICAL (Fix First):
+- Database migrations for email and is_registered fields
+- Install missing Python packages (openpyxl, pandas, python-dateutil)
+- Add missing URL patterns for export/import/tax-report
+- Add missing view functions for export/import/tax-report
+- Restart PM2 process
+
+IMPORTANT (Fix Second):
+- Verify CORS configuration
+- Test all API endpoints
+- Check Nginx routing
+- Verify JWT configuration
+
+OPTIONAL (Fix Third):
+- Check error logs
+- Verify file permissions
+- Performance optimization
+
+16. TESTING COMMANDS
+====================
+
+# Test local backend:
+curl http://localhost:3017/api/auth/register/
+
+# Test external API:
+curl https://api.mywaitime.com/family-api/auth/register/
+
+# Test export endpoint:
+curl https://api.mywaitime.com/family-api/export/
+
+# Test import endpoint:
+curl -X POST https://api.mywaitime.com/family-api/import/
+
+# Test tax report endpoint:
+curl https://api.mywaitime.com/family-api/tax-report/
+
+17. DEPLOYMENT STEPS
+====================
+
+1. SSH into GoDaddy server
+2. Navigate to Django project directory
+3. Activate virtual environment
+4. Install missing packages
+5. Run database migrations
+6. Restart PM2 process
+7. Test API endpoints
+8. Verify Nginx configuration
+9. Test frontend connection
+
+18. EXPECTED RESULTS
+===================
+
+After implementing all functions:
+- ✅ User registration/login working
+- ✅ Family member management working
+- ✅ Expense/mile/hour tracking working
+- ✅ Export/import functionality working
+- ✅ AI tax categorization working
+- ✅ Statistics calculation working
+- ✅ No more 404/500 errors
+- ✅ Frontend-backend connection working
+
+END OF CHECKLIST
+================
