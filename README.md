@@ -1,185 +1,190 @@
 # Family Bookkeeping Application
 
-A full-stack web application for tracking family expenses, miles, and hours with Django backend and modern frontend.
+A comprehensive family bookkeeping system built with Django REST Framework backend and vanilla JavaScript frontend.
 
 ## Features
 
-- **User Authentication**: Register and login with JWT tokens
-- **Family Member Management**: Add and manage family members
-- **Expense Tracking**: Record and track family expenses
-- **Miles Tracking**: Log miles for different activities
-- **Hours Tracking**: Track hours worked or spent on activities
-- **Statistics Dashboard**: View totals and summaries
-- **Responsive Design**: Modern Bootstrap 5 UI
+### 🏠 Family Management
+- Add, edit, and delete family members
+- Role-based access control (Admin/Member)
+- Email notifications and reports
+- Family member permissions
 
-## Architecture
+### 💰 Expense Tracking
+- Track expenses by family member
+- Categorize and describe expenses
+- Date-based filtering
+- Export to CSV/JSON
 
-- **Backend**: Django REST Framework with JWT authentication
-- **Frontend**: Vanilla JavaScript with Bootstrap 5
-- **Database**: PostgreSQL (production) / SQLite (development)
-- **Deployment**: Docker containers with GitHub Actions
+### 🚗 Mile Tracking
+- Log business miles
+- Set custom rates
+- Calculate reimbursements
+- Export mileage reports
+
+### ⏰ Hour Tracking
+- Track work hours
+- Set hourly rates
+- Calculate earnings
+- Export time reports
+
+### 📊 Reporting & Analytics
+- Combined family reports
+- Individual member reports
+- Charts and visualizations
+- Data export (CSV, JSON, PDF)
+
+### 🔐 Authentication & Security
+- JWT-based authentication
+- Role-based permissions
+- Secure API endpoints
+- Token refresh mechanism
+
+## Technology Stack
+
+### Backend
+- **Django 4.2.7** - Web framework
+- **Django REST Framework** - API framework
+- **SQLite** - Database (development)
+- **PostgreSQL** - Database (production)
+- **JWT Authentication** - Token-based auth
+- **CORS** - Cross-origin resource sharing
+
+### Frontend
+- **Vanilla JavaScript** - No framework dependencies
+- **Bootstrap 5** - UI framework
+- **Chart.js** - Data visualization
+- **Font Awesome** - Icons
 
 ## Quick Start
 
-### Option 1: Docker (Recommended)
+### Prerequisites
+- Python 3.8+
+- Node.js (for frontend development)
+- Git
 
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd book-keeping
-```
+### Backend Setup
 
-2. Start the application:
-```bash
-docker-compose up -d
-```
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd book-keeping
+   ```
 
-3. Access the application:
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8000/api/
-- Admin: http://localhost:8000/admin/
+2. **Create virtual environment**
+   ```bash
+   cd backend
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
-### Option 2: Local Development
+3. **Install dependencies**
+   ```bash
+   pip install -r requirements/development.txt
+   ```
 
-#### Backend Setup
+4. **Run migrations**
+   ```bash
+   python manage.py migrate
+   ```
 
-1. Navigate to backend directory:
-```bash
-cd backend
-```
+5. **Create superuser**
+   ```bash
+   python manage.py createsuperuser
+   ```
 
-2. Create virtual environment:
-```bash
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
+6. **Start development server**
+   ```bash
+   python manage.py runserver 0.0.0.0:3017
+   ```
 
-3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+### Frontend Setup
 
-4. Run migrations:
-```bash
-python manage.py migrate
-```
+1. **Start the frontend server**
+   ```bash
+   # From the root directory
+   python -m http.server 8080
+   ```
 
-5. Create superuser:
-```bash
-python manage.py createsuperuser
-```
-
-6. Start the backend server:
-```bash
-python manage.py runserver
-```
-
-#### Frontend Setup
-
-1. Navigate to project root:
-```bash
-cd ..
-```
-
-2. Install Node.js dependencies:
-```bash
-npm install
-```
-
-3. Start the frontend server:
-```bash
-npm start
-```
+2. **Access the application**
+   - Frontend: http://localhost:8080
+   - Backend API: http://localhost:3017/api
 
 ## API Endpoints
 
 ### Authentication
 - `POST /api/auth/register/` - User registration
 - `POST /api/auth/login/` - User login
-- `GET /api/auth/profile/` - Get user profile
+- `POST /api/auth/refresh/` - Token refresh
 
 ### Family Members
 - `GET /api/family-members/` - List family members
 - `POST /api/family-members/` - Create family member
-- `GET /api/family-members/{id}/` - Get family member details
 - `PUT /api/family-members/{id}/` - Update family member
 - `DELETE /api/family-members/{id}/` - Delete family member
 
 ### Expenses
 - `GET /api/expenses/` - List expenses
 - `POST /api/expenses/` - Create expense
-- `GET /api/expenses/{id}/` - Get expense details
 - `PUT /api/expenses/{id}/` - Update expense
 - `DELETE /api/expenses/{id}/` - Delete expense
 
 ### Miles
 - `GET /api/miles/` - List miles
-- `POST /api/miles/` - Create mile record
-- `GET /api/miles/{id}/` - Get mile details
-- `PUT /api/miles/{id}/` - Update mile record
-- `DELETE /api/miles/{id}/` - Delete mile record
+- `POST /api/miles/` - Create mile entry
+- `PUT /api/miles/{id}/` - Update mile entry
+- `DELETE /api/miles/{id}/` - Delete mile entry
 
 ### Hours
 - `GET /api/hours/` - List hours
-- `POST /api/hours/` - Create hour record
-- `GET /api/hours/{id}/` - Get hour details
-- `PUT /api/hours/{id}/` - Update hour record
-- `DELETE /api/hours/{id}/` - Delete hour record
-
-### Statistics
-- `GET /api/statistics/?family_member_id={id}` - Get statistics for family member
-
-## Environment Variables
-
-Create a `.env` file in the backend directory:
-
-```env
-SECRET_KEY=your-secret-key-here
-DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1
-DATABASE_URL=postgresql://user:password@localhost:5432/bookkeeping
-```
+- `POST /api/hours/` - Create hour entry
+- `PUT /api/hours/{id}/` - Update hour entry
+- `DELETE /api/hours/{id}/` - Delete hour entry
 
 ## Deployment
 
-### GitHub Actions
+### Development
+```bash
+# Backend
+cd backend
+source venv/bin/activate
+python manage.py runserver 0.0.0.0:3017
 
-The repository includes GitHub Actions workflow for automated testing and deployment:
+# Frontend
+python -m http.server 8080
+```
 
-1. Set up secrets in your GitHub repository:
-   - `SECRET_KEY`: Django secret key
-   - `DATABASE_URL`: Production database URL
-
-2. Push to main/master branch to trigger deployment
-
-### Manual Deployment
-
-1. Set up production server with Docker
+### Production
+1. Set up PostgreSQL database
 2. Configure environment variables
-3. Run `docker-compose up -d`
+3. Run migrations
+4. Collect static files
+5. Deploy with Gunicorn + Nginx
 
-## Development
+## Environment Variables
 
-### Running Tests
+Create `.env` files for different environments:
 
-```bash
-cd backend
-python manage.py test
+### Development (.env.development)
+```
+DJANGO_SETTINGS_MODULE=bookkeeping.settings.development
+SECRET_KEY=your_development_secret_key
+DEBUG=True
+CORS_ALLOWED_ORIGINS=http://localhost:8080,http://127.0.0.1:8080
 ```
 
-### Database Migrations
-
-```bash
-cd backend
-python manage.py makemigrations
-python manage.py migrate
+### Production (.env.production)
 ```
-
-### Static Files
-
-```bash
-cd backend
-python manage.py collectstatic
+DJANGO_SETTINGS_MODULE=bookkeeping.settings.production
+SECRET_KEY=your_production_secret_key
+DEBUG=False
+DJANGO_ALLOWED_HOSTS=api.yourdomain.com,www.yourdomain.com
+POSTGRES_DB=your_db_name
+POSTGRES_USER=your_db_user
+POSTGRES_PASSWORD=your_db_password
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+CORS_ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
 ```
 
 ## Contributing
@@ -192,8 +197,8 @@ python manage.py collectstatic
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Support
 
-For support, please open an issue in the GitHub repository.
+For support, email support@yourdomain.com or create an issue in the repository.

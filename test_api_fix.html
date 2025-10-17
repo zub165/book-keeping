@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Fix Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>API Fix Test</h1>
+        <div class="card">
+            <div class="card-body">
+                <h5>Test Results</h5>
+                <div id="testResults">
+                    <p class="text-muted">Testing API endpoints...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/django-auth.js"></script>
+    <script>
+        async function testAPI() {
+            const resultsDiv = document.getElementById('testResults');
+            
+            try {
+                // Test login
+                resultsDiv.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Testing...</div>';
+                
+                const loginResult = await window.djangoAuth.login('zm_199@hotmail.com', 'testpass123');
+                console.log('Login result:', loginResult);
+                
+                let results = '<h6>✅ Login Successful</h6>';
+                
+                // Test getFamilyMembers
+                try {
+                    const familyMembers = await window.djangoData.getFamilyMembers();
+                    console.log('Family members:', familyMembers);
+                    results += `<p>✅ Family Members API: Working (${familyMembers.results?.length || familyMembers.length} members)</p>`;
+                } catch (error) {
+                    console.error('Family members error:', error);
+                    results += `<p>❌ Family Members API: ${error.message}</p>`;
+                }
+                
+                // Test getUserFamilyMember
+                try {
+                    const userFamilyMember = await window.djangoData.getUserFamilyMember();
+                    console.log('User family member:', userFamilyMember);
+                    results += `<p>✅ User Family Member API: Working</p>`;
+                } catch (error) {
+                    console.error('User family member error:', error);
+                    results += `<p>❌ User Family Member API: ${error.message}</p>`;
+                }
+                
+                // Test getAllFamilyData (this was the failing one)
+                try {
+                    const allFamilyData = await window.djangoData.getAllFamilyData();
+                    console.log('All family data:', allFamilyData);
+                    results += `<p>✅ All Family Data API: Working (${allFamilyData.combined_statistics?.family_member_count || 0} members)</p>`;
+                } catch (error) {
+                    console.error('All family data error:', error);
+                    results += `<p>❌ All Family Data API: ${error.message}</p>`;
+                }
+                
+                resultsDiv.innerHTML = results;
+                
+            } catch (error) {
+                console.error('Test error:', error);
+                resultsDiv.innerHTML = `<div class="alert alert-danger">❌ Test Failed: ${error.message}</div>`;
+            }
+        }
+
+        // Run test when page loads
+        document.addEventListener('DOMContentLoaded', testAPI);
+    </script>
+</body>
+</html>

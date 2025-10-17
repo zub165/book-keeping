@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend API Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Frontend API Test</h1>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Authentication Test</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="loginForm">
+                            <div class="mb-3">
+                                <label class="form-label">Username</label>
+                                <input type="text" class="form-control" id="username" value="testuser" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Password</label>
+                                <input type="password" class="form-control" id="password" value="testpass123" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Login</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>API Test Results</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="testResults">
+                            <p class="text-muted">Login to test API endpoints</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/django-auth.js"></script>
+    <script src="js/django-app.js"></script>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const resultsDiv = document.getElementById('testResults');
+            
+            try {
+                resultsDiv.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Testing...</div>';
+                
+                // Test login
+                const loginResult = await window.djangoAuth.login(username, password);
+                console.log('Login result:', loginResult);
+                
+                let results = '<h6>✅ Login Successful</h6>';
+                
+                // Test getFamilyMembers
+                try {
+                    const familyMembers = await window.djangoData.getFamilyMembers();
+                    console.log('Family members:', familyMembers);
+                    results += '<p>✅ Family Members API: Working</p>';
+                } catch (error) {
+                    console.error('Family members error:', error);
+                    results += `<p>❌ Family Members API: ${error.message}</p>`;
+                }
+                
+                // Test getUserFamilyMember
+                try {
+                    const userFamilyMember = await window.djangoData.getUserFamilyMember();
+                    console.log('User family member:', userFamilyMember);
+                    results += '<p>✅ User Family Member API: Working</p>';
+                } catch (error) {
+                    console.error('User family member error:', error);
+                    results += `<p>❌ User Family Member API: ${error.message}</p>`;
+                }
+                
+                // Test getAllFamilyData (if admin)
+                try {
+                    const allFamilyData = await window.djangoData.getAllFamilyData();
+                    console.log('All family data:', allFamilyData);
+                    results += '<p>✅ All Family Data API: Working</p>';
+                } catch (error) {
+                    console.error('All family data error:', error);
+                    results += `<p>❌ All Family Data API: ${error.message}</p>`;
+                }
+                
+                // Test getExpenses
+                try {
+                    const expenses = await window.djangoData.getExpenses(1);
+                    console.log('Expenses:', expenses);
+                    results += '<p>✅ Expenses API: Working</p>';
+                } catch (error) {
+                    console.error('Expenses error:', error);
+                    results += `<p>❌ Expenses API: ${error.message}</p>`;
+                }
+                
+                // Test getMiles
+                try {
+                    const miles = await window.djangoData.getMiles(1);
+                    console.log('Miles:', miles);
+                    results += '<p>✅ Miles API: Working</p>';
+                } catch (error) {
+                    console.error('Miles error:', error);
+                    results += `<p>❌ Miles API: ${error.message}</p>`;
+                }
+                
+                // Test getHours
+                try {
+                    const hours = await window.djangoData.getHours(1);
+                    console.log('Hours:', hours);
+                    results += '<p>✅ Hours API: Working</p>';
+                } catch (error) {
+                    console.error('Hours error:', error);
+                    results += `<p>❌ Hours API: ${error.message}</p>`;
+                }
+                
+                resultsDiv.innerHTML = results;
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                resultsDiv.innerHTML = `<div class="alert alert-danger">❌ Login Failed: ${error.message}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>

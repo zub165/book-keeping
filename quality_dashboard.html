@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Quality Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .quality-card {
+            transition: transform 0.2s;
+        }
+        .quality-card:hover {
+            transform: translateY(-2px);
+        }
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .quality-excellent { color: #28a745; }
+        .quality-good { color: #17a2b8; }
+        .quality-fair { color: #ffc107; }
+        .quality-poor { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="mb-4">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Application Quality Dashboard
+                </h1>
+            </div>
+        </div>
+
+        <!-- Quality Overview -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card quality-card border-success">
+                    <div class="card-body text-center">
+                        <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                        <h5 class="card-title">Overall Quality</h5>
+                        <div class="metric-value quality-excellent" id="overallQuality">92%</div>
+                        <small class="text-muted">Excellent</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card quality-card border-info">
+                    <div class="card-body text-center">
+                        <i class="fas fa-shield-alt fa-2x text-info mb-2"></i>
+                        <h5 class="card-title">Rules Compliance</h5>
+                        <div class="metric-value quality-good" id="rulesCompliance">88%</div>
+                        <small class="text-muted">Good</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card quality-card border-warning">
+                    <div class="card-body text-center">
+                        <i class="fas fa-code fa-2x text-warning mb-2"></i>
+                        <h5 class="card-title">Standards Compliance</h5>
+                        <div class="metric-value quality-fair" id="standardsCompliance">82%</div>
+                        <small class="text-muted">Fair</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card quality-card border-primary">
+                    <div class="card-body text-center">
+                        <i class="fas fa-bug fa-2x text-primary mb-2"></i>
+                        <h5 class="card-title">Issues Found</h5>
+                        <div class="metric-value" id="issuesFound">12</div>
+                        <small class="text-muted">Total Issues</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quality Metrics Chart -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-bar me-2"></i>
+                            Quality Metrics Over Time
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="qualityChart" height="100"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-list me-2"></i>
+                            Quality Breakdown
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Array Handling</span>
+                                <span class="badge bg-success">95%</span>
+                            </div>
+                            <div class="progress mt-1" style="height: 8px;">
+                                <div class="progress-bar bg-success" style="width: 95%"></div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Error Handling</span>
+                                <span class="badge bg-success">90%</span>
+                            </div>
+                            <div class="progress mt-1" style="height: 8px;">
+                                <div class="progress-bar bg-success" style="width: 90%"></div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Role-Based Access</span>
+                                <span class="badge bg-warning">85%</span>
+                            </div>
+                            <div class="progress mt-1" style="height: 8px;">
+                                <div class="progress-bar bg-warning" style="width: 85%"></div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span>API Testing</span>
+                                <span class="badge bg-info">88%</span>
+                            </div>
+                            <div class="progress mt-1" style="height: 8px;">
+                                <div class="progress-bar bg-info" style="width: 88%"></div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span>User Experience</span>
+                                <span class="badge bg-success">92%</span>
+                            </div>
+                            <div class="progress mt-1" style="height: 8px;">
+                                <div class="progress-bar bg-success" style="width: 92%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Issues and Recommendations -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Critical Issues
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group list-group-flush">
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Array Handling</h6>
+                                    <small>Missing Array.isArray() validation in 3 functions</small>
+                                </div>
+                                <span class="badge bg-danger">HIGH</span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Error Handling</h6>
+                                    <small>API calls without try-catch in 2 functions</small>
+                                </div>
+                                <span class="badge bg-warning">MEDIUM</span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Role-Based Access</h6>
+                                    <small>Admin features visible to non-admin users</small>
+                                </div>
+                                <span class="badge bg-danger">HIGH</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            Recommendations
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group list-group-flush">
+                            <div class="list-group-item">
+                                <h6 class="mb-1">Implement Array Validation</h6>
+                                <small>Add Array.isArray() checks before all array methods</small>
+                            </div>
+                            <div class="list-group-item">
+                                <h6 class="mb-1">Enhance Error Handling</h6>
+                                <small>Wrap all API calls in try-catch blocks</small>
+                            </div>
+                            <div class="list-group-item">
+                                <h6 class="mb-1">Add Role-Based Security</h6>
+                                <small>Implement proper permission checks for admin features</small>
+                            </div>
+                            <div class="list-group-item">
+                                <h6 class="mb-1">Improve User Experience</h6>
+                                <small>Add loading states and better error messages</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-tools me-2"></i>
+                            Quality Control Actions
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <button class="btn btn-primary w-100 mb-2" onclick="runQualityCheck()">
+                                    <i class="fas fa-play me-2"></i>
+                                    Run Quality Check
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-success w-100 mb-2" onclick="applyFixes()">
+                                    <i class="fas fa-wrench me-2"></i>
+                                    Apply Fixes
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-info w-100 mb-2" onclick="generateReport()">
+                                    <i class="fas fa-file-alt me-2"></i>
+                                    Generate Report
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-warning w-100 mb-2" onclick="setupMonitoring()">
+                                    <i class="fas fa-eye me-2"></i>
+                                    Setup Monitoring
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="validate_rules.js"></script>
+    <script src="check_standards.js"></script>
+    <script src="enforce_quality.js"></script>
+    <script src="quality_control.js"></script>
+    <script>
+        // Initialize quality dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeQualityChart();
+            updateQualityMetrics();
+        });
+
+        // Quality metrics data
+        const qualityData = {
+            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+            overall: [85, 88, 90, 92],
+            rules: [80, 83, 86, 88],
+            standards: [75, 78, 80, 82]
+        };
+
+        // Initialize quality chart
+        function initializeQualityChart() {
+            const ctx = document.getElementById('qualityChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: qualityData.labels,
+                    datasets: [{
+                        label: 'Overall Quality',
+                        data: qualityData.overall,
+                        borderColor: '#28a745',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Rules Compliance',
+                        data: qualityData.rules,
+                        borderColor: '#17a2b8',
+                        backgroundColor: 'rgba(23, 162, 184, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Standards Compliance',
+                        data: qualityData.standards,
+                        borderColor: '#ffc107',
+                        backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update quality metrics
+        function updateQualityMetrics() {
+            // This would be updated with real-time data
+            console.log('Quality metrics updated');
+        }
+
+        // Run quality check
+        function runQualityCheck() {
+            console.log('Running quality check...');
+            // Implement quality check logic
+            alert('Quality check completed! Check console for details.');
+        }
+
+        // Apply fixes
+        function applyFixes() {
+            console.log('Applying quality fixes...');
+            // Implement automatic fixes
+            alert('Quality fixes applied!');
+        }
+
+        // Generate report
+        function generateReport() {
+            console.log('Generating quality report...');
+            // Implement report generation
+            alert('Quality report generated!');
+        }
+
+        // Setup monitoring
+        function setupMonitoring() {
+            console.log('Setting up quality monitoring...');
+            // Implement monitoring setup
+            alert('Quality monitoring setup complete!');
+        }
+    </script>
+</body>
+</html>

@@ -1,5 +1,9 @@
 // Django Backend Authentication Handlers
 
+// Prevent multiple simultaneous requests
+let isLoggingIn = false;
+let isRegistering = false;
+
 // Handle registration
 async function handleRegister(event) {
     event.preventDefault();
@@ -49,6 +53,24 @@ async function handleRegister(event) {
 async function handleLogin(event) {
     event.preventDefault();
     
+    // Prevent multiple simultaneous login attempts
+    if (isLoggingIn) {
+        console.log('Login already in progress, ignoring...');
+        return;
+    }
+    
+    isLoggingIn = true;
+    
+    // Prevent multiple submissions
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) {
+        isLoggingIn = false;
+        return;
+    }
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Logging in...';
+    
     try {
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
@@ -58,6 +80,8 @@ async function handleLogin(event) {
             return;
         }
 
+        console.log('Attempting login with:', { email, password: '***' });
+        
         const credentials = {
             username: email,
             password: password
@@ -66,13 +90,19 @@ async function handleLogin(event) {
         const user = await window.djangoAuth.login(credentials);
         window.djangoAuth.setCurrentUser(user);
         
+        console.log('Login successful:', user);
         app.utils.showAlert('Successfully logged in!', 'success');
         
         // Trigger auth state change
         window.dispatchEvent(new CustomEvent('authStateChanged'));
     } catch (error) {
         console.error('Login error:', error);
-        app.utils.showAlert(error.message, 'danger');
+        app.utils.showAlert(`Login failed: ${error.message}`, 'danger');
+    } finally {
+        // Re-enable button and reset flag
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Login';
+        isLoggingIn = false;
     }
 }
 

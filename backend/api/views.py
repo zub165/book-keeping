@@ -1,6 +1,6 @@
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
@@ -8,8 +8,15 @@ from django.contrib.auth.models import User
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.utils import timezone
-import pandas as pd
-import openpyxl
+try:
+    import pandas as pd
+    import openpyxl
+    PANDAS_AVAILABLE = True
+except ImportError:
+    PANDAS_AVAILABLE = False
+    pd = None
+    openpyxl = None
+
 from io import BytesIO
 import json
 from datetime import datetime, timedelta
@@ -18,9 +25,11 @@ from .serializers import (
     UserSerializer, FamilyMemberSerializer, ExpenseSerializer, 
     MileSerializer, HourSerializer, UserRegistrationSerializer
 )
+from .email_service import EmailService
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def register(request):
     """User registration endpoint"""
     serializer = UserRegistrationSerializer(data=request.data)
@@ -47,6 +56,7 @@ def register(request):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def login(request):
     """User login endpoint"""
     username = request.data.get('username')
@@ -99,7 +109,20 @@ class FamilyMemberListCreateView(generics.ListCreateAPIView):
         return FamilyMember.objects.filter(user=self.request.user)
     
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        try:
+            # Log the data being saved
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"Creating family member with data: {self.request.data}")
+            
+            serializer.save(user=self.request.user)
+            logger.info(f"Family member created successfully")
+        except Exception as e:
+            # Log the error for debugging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error creating family member: {str(e)}")
+            logger.error(f"Request data: {self.request.data}")
+            raise e
 
 
 class FamilyMemberDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -550,3 +573,316 @@ def tax_report(request):
     tax_data['forms_needed'] = list(tax_data['forms_needed'])
     
     return Response(tax_data)
+
+
+# Email Endpoints
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def send_family_report(request):
+    """Send a report to a family member via email"""
+    try:
+        data = request.data
+        recipient_email = data.get('recipient_email')
+        recipient_name = data.get('recipient_name')
+        family_member_id = data.get('family_member_id')
+        report_type = data.get('report_type', 'monthly')
+        
+        if not all([recipient_email, recipient_name, family_member_id]):
+            return Response({
+                'error': 'recipient_email, recipient_name, and family_member_id are required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get family member
+        try:
+            family_member = FamilyMember.objects.get(
+                id=family_member_id, 
+                user=request.user
+            )
+        except FamilyMember.DoesNotExist:
+            return Response({'error': 'Family member not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Get report data
+        expenses = Expense.objects.filter(family_member=family_member)
+        miles = Mile.objects.filter(family_member=family_member)
+        hours = Hour.objects.filter(family_member=family_member)
+        
+        # Calculate summary
+        total_expenses = expenses.aggregate(Sum('amount'))['amount__sum'] or 0
+        total_miles = miles.aggregate(Sum('miles'))['miles__sum'] or 0
+        total_hours = hours.aggregate(Sum('hours'))['hours__sum'] or 0
+        
+        report_data = {
+            'summary': {
+                'totalExpenses': float(total_expenses),
+                'totalMiles': float(total_miles),
+                'totalHours': float(total_hours)
+            },
+            'expenses': [
+                {
+                    'description': exp.description,
+                    'amount': float(exp.amount),
+                    'created_at': exp.created_at.isoformat()
+                } for exp in expenses[:10]
+            ]
+        }
+        
+        # Send email
+        success, message = EmailService.send_family_report(
+            recipient_email, recipient_name, family_member.name, report_data, report_type
+        )
+        
+        if success:
+            return Response({'message': message}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def send_welcome_email(request):
+    """Send welcome email to a new family member"""
+    try:
+        data = request.data
+        recipient_email = data.get('recipient_email')
+        recipient_name = data.get('recipient_name')
+        
+        if not all([recipient_email, recipient_name]):
+            return Response({
+                'error': 'recipient_email and recipient_name are required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Send welcome email
+        success, message = EmailService.send_welcome_email(recipient_email, recipient_name)
+        
+        if success:
+            return Response({'message': message}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def send_monthly_summary(request):
+    """Send monthly summary to family members"""
+    try:
+        data = request.data
+        family_member_id = data.get('family_member_id')
+        
+        if not family_member_id:
+            return Response({'error': 'family_member_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get family member
+        try:
+            family_member = FamilyMember.objects.get(
+                id=family_member_id, 
+                user=request.user
+            )
+        except FamilyMember.DoesNotExist:
+            return Response({'error': 'Family member not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Get family members with email addresses
+        family_members_with_email = FamilyMember.objects.filter(
+            user=request.user,
+            email__isnull=False
+        ).exclude(email='')
+        
+        if not family_members_with_email.exists():
+            return Response({'error': 'No family members with email addresses found'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Calculate summary data
+        expenses = Expense.objects.filter(family_member=family_member)
+        miles = Mile.objects.filter(family_member=family_member)
+        hours = Hour.objects.filter(family_member=family_member)
+        
+        summary_data = {
+            'total_expenses': float(expenses.aggregate(Sum('amount'))['amount__sum'] or 0),
+            'total_miles': float(miles.aggregate(Sum('miles'))['miles__sum'] or 0),
+            'total_hours': float(hours.aggregate(Sum('hours'))['hours__sum'] or 0),
+            'total_deductions': float(expenses.aggregate(Sum('amount'))['amount__sum'] or 0) * 0.1  # 10% deduction estimate
+        }
+        
+        # Send emails to all family members with email addresses
+        results = []
+        for member in family_members_with_email:
+            success, message = EmailService.send_monthly_summary(
+                member.email, member.name, family_member.name, summary_data
+            )
+            results.append({
+                'email': member.email,
+                'name': member.name,
+                'success': success,
+                'message': message
+            })
+        
+        return Response({
+            'message': 'Monthly summary emails processed',
+            'results': results
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def test_email(request):
+    """Test email functionality"""
+    try:
+        data = request.data
+        test_email = data.get('test_email')
+        
+        if not test_email:
+            return Response({'error': 'test_email is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Send test email
+        success, message = EmailService.send_welcome_email(test_email, "Test User")
+        
+        if success:
+            return Response({'message': f'Test email sent to {test_email}'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': f'Failed to send test email: {message}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# Multi-User Family System Endpoints
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_family_member(request):
+    """Get the current user's family member profile"""
+    try:
+        # Get the first family member for the user (or the one with 'Self' relation)
+        family_members = FamilyMember.objects.filter(user=request.user)
+        
+        if not family_members.exists():
+            return Response({'error': 'Family member profile not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Try to get the 'Self' relation first, otherwise get the first one
+        family_member = family_members.filter(relation='Self').first()
+        if not family_member:
+            family_member = family_members.first()
+        
+        serializer = FamilyMemberSerializer(family_member)
+        return Response(serializer.data)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_all_family_data(request):
+    """Get all family data for admin users"""
+    try:
+        # Check if user is admin - get the first family member with admin privileges
+        user_family_members = FamilyMember.objects.filter(user=request.user)
+        if not user_family_members.exists():
+            return Response({'error': 'Family member profile not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Find admin family member (preferably 'Self' relation)
+        user_family_member = user_family_members.filter(relation='Self').first()
+        if not user_family_member:
+            user_family_member = user_family_members.first()
+        
+        if not user_family_member.can_view_all:
+            return Response({'error': 'Access denied. Admin privileges required.'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Get all family members
+        all_family_members = FamilyMember.objects.filter(user=request.user)
+        
+        # Get all expenses, miles, and hours for all family members
+        all_expenses = Expense.objects.filter(family_member__in=all_family_members)
+        all_miles = Mile.objects.filter(family_member__in=all_family_members)
+        all_hours = Hour.objects.filter(family_member__in=all_family_members)
+        
+        # Calculate combined statistics
+        total_expenses = all_expenses.aggregate(Sum('amount'))['amount__sum'] or 0
+        total_miles = all_miles.aggregate(Sum('miles'))['miles__sum'] or 0
+        total_hours = all_hours.aggregate(Sum('hours'))['hours__sum'] or 0
+        
+        # Get individual statistics for each family member
+        individual_stats = []
+        for member in all_family_members:
+            member_expenses = all_expenses.filter(family_member=member)
+            member_miles = all_miles.filter(family_member=member)
+            member_hours = all_hours.filter(family_member=member)
+            
+            individual_stats.append({
+                'family_member': FamilyMemberSerializer(member).data,
+                'expenses': ExpenseSerializer(member_expenses, many=True).data,
+                'miles': MileSerializer(member_miles, many=True).data,
+                'hours': HourSerializer(member_hours, many=True).data,
+                'statistics': {
+                    'total_expenses': float(member_expenses.aggregate(Sum('amount'))['amount__sum'] or 0),
+                    'total_miles': float(member_miles.aggregate(Sum('miles'))['miles__sum'] or 0),
+                    'total_hours': float(member_hours.aggregate(Sum('hours'))['hours__sum'] or 0)
+                }
+            })
+        
+        return Response({
+            'combined_statistics': {
+                'total_expenses': float(total_expenses),
+                'total_miles': float(total_miles),
+                'total_hours': float(total_hours),
+                'family_member_count': all_family_members.count()
+            },
+            'individual_data': individual_stats,
+            'all_expenses': ExpenseSerializer(all_expenses, many=True).data,
+            'all_miles': MileSerializer(all_miles, many=True).data,
+            'all_hours': HourSerializer(all_hours, many=True).data
+        })
+        
+    except FamilyMember.DoesNotExist:
+        return Response({'error': 'Family member profile not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_family_member_data(request, member_id):
+    """Get specific family member's data"""
+    try:
+        # Check if user can view this data
+        user_family_members = FamilyMember.objects.filter(user=request.user)
+        if not user_family_members.exists():
+            return Response({'error': 'Family member profile not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Get the user's main family member (preferably 'Self' relation)
+        user_family_member = user_family_members.filter(relation='Self').first()
+        if not user_family_member:
+            user_family_member = user_family_members.first()
+        
+        target_member = FamilyMember.objects.get(id=member_id)
+        
+        # Allow if user is admin or viewing their own data
+        if not user_family_member.can_view_all and user_family_member.id != target_member.id:
+            return Response({'error': 'Access denied'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Get data for the specific family member
+        expenses = Expense.objects.filter(family_member=target_member)
+        miles = Mile.objects.filter(family_member=target_member)
+        hours = Hour.objects.filter(family_member=target_member)
+        
+        return Response({
+            'family_member': FamilyMemberSerializer(target_member).data,
+            'expenses': ExpenseSerializer(expenses, many=True).data,
+            'miles': MileSerializer(miles, many=True).data,
+            'hours': HourSerializer(hours, many=True).data,
+            'statistics': {
+                'total_expenses': float(expenses.aggregate(Sum('amount'))['amount__sum'] or 0),
+                'total_miles': float(miles.aggregate(Sum('miles'))['miles__sum'] or 0),
+                'total_hours': float(hours.aggregate(Sum('hours'))['hours__sum'] or 0)
+            }
+        })
+        
+    except FamilyMember.DoesNotExist:
+        return Response({'error': 'Family member not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

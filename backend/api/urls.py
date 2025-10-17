@@ -31,4 +31,15 @@ urlpatterns = [
     path('export/', views.export_transactions, name='export_transactions'),
     path('import/', views.import_transactions, name='import_transactions'),
     path('tax-report/', views.tax_report, name='tax_report'),
+    
+    # Email endpoints
+    path('email/send-report/', views.send_family_report, name='send_family_report'),
+    path('email/welcome/', views.send_welcome_email, name='send_welcome_email'),
+    path('email/monthly-summary/', views.send_monthly_summary, name='send_monthly_summary'),
+    path('email/test/', views.test_email, name='test_email'),
+    
+    # Multi-user family system endpoints
+    path('user/family-member/', views.get_user_family_member, name='get_user_family_member'),
+    path('family/all-data/', views.get_all_family_data, name='get_all_family_data'),
+    path('family/member/<int:member_id>/', views.get_family_member_data, name='get_family_member_data'),
 ]

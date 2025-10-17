@@ -1,0 +1,9 @@
+# Development Dependencies
+-r base.txt
+django-debug-toolbar==4.2.0
+django-extensions==3.2.3
+factory-boy==3.3.0
+pytest==7.4.3
+pytest-django==4.7.0
+coverage==7.3.2
+python-decouple==3.8

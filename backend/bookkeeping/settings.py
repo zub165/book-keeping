@@ -129,9 +129,59 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://localhost:3001",
     "http://127.0.0.1:3001",
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+    "https://zub165.github.io",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+
+# Additional CORS settings for development
+CORS_ALLOW_ALL_ORIGINS = DEBUG  # Allow all origins in development
+CORS_ALLOWED_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+# Email Configuration
+try:
+    from api.email_config import EMAIL_CONFIG
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = EMAIL_CONFIG['EMAIL_HOST']
+    EMAIL_PORT = EMAIL_CONFIG['EMAIL_PORT']
+    EMAIL_USE_TLS = EMAIL_CONFIG['EMAIL_USE_TLS']
+    EMAIL_USE_SSL = EMAIL_CONFIG['EMAIL_USE_SSL']
+    EMAIL_HOST_USER = EMAIL_CONFIG['EMAIL_HOST_USER']
+    EMAIL_HOST_PASSWORD = EMAIL_CONFIG['EMAIL_HOST_PASSWORD']
+    DEFAULT_FROM_EMAIL = EMAIL_CONFIG['DEFAULT_FROM_EMAIL']
+    SERVER_EMAIL = EMAIL_CONFIG['SERVER_EMAIL']
+    EMAIL_TIMEOUT = EMAIL_CONFIG['EMAIL_TIMEOUT']
+except ImportError:
+    # Fallback configuration
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # For development
+    EMAIL_HOST = 'dedrelay.secureserver.net'
+    EMAIL_PORT = 25
+    EMAIL_USE_TLS = False
+    EMAIL_USE_SSL = False
+    EMAIL_HOST_USER = ''
+    EMAIL_HOST_PASSWORD = ''
+    DEFAULT_FROM_EMAIL = 'noreply@mywaitime.com'
+    SERVER_EMAIL = 'noreply@mywaitime.com'
 
 # Security settings for production
 if not DEBUG:

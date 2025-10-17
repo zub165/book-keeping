@@ -1,0 +1,110 @@
+name: family_bookkeeping
+description: A comprehensive family bookkeeping application for tracking expenses, miles, and hours.
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # State Management
+  provider: ^6.1.1
+  riverpod: ^2.4.9
+  flutter_riverpod: ^2.4.9
+  
+  # Navigation
+  go_router: ^12.1.3
+  
+  # Firebase
+  firebase_core: ^2.24.2
+  firebase_auth: ^4.15.3
+  cloud_firestore: ^4.13.6
+  firebase_storage: ^11.5.6
+  firebase_analytics: ^10.7.4
+  firebase_crashlytics: ^3.4.9
+  
+  # Authentication
+  google_sign_in: ^6.2.1
+  sign_in_with_apple: ^5.0.0
+  
+  # Database
+  sqflite: ^2.3.0
+  drift: ^2.14.1
+  drift_flutter: ^0.1.0
+  
+  # HTTP & API
+  dio: ^5.4.0
+  retrofit: ^4.0.3
+  
+  # UI Components
+  cupertino_icons: ^1.0.6
+  flutter_svg: ^2.0.9
+  cached_network_image: ^3.3.0
+  shimmer: ^3.0.0
+  
+  # Charts & Reports
+  fl_chart: ^0.66.0
+  pdf: ^3.10.7
+  printing: ^5.11.1
+  excel: ^4.0.6
+  
+  # Image & Camera
+  image_picker: ^1.0.4
+  camera: ^0.10.5+5
+  
+  # OCR & Scanning
+  google_mlkit_text_recognition: ^0.10.0
+  
+  # File Management
+  path_provider: ^2.1.2
+  file_picker: ^6.1.1
+  share_plus: ^7.2.2
+  
+  # Payments & Subscriptions
+  in_app_purchase: ^3.1.11
+  purchases_flutter: ^6.20.0
+  
+  # Utilities
+  intl: ^0.19.0
+  uuid: ^4.2.1
+  shared_preferences: ^2.2.2
+  connectivity_plus: ^5.0.2
+  permission_handler: ^11.2.0
+  
+  # Security
+  crypto: ^3.0.3
+  encrypt: ^5.0.1
+  
+  # Localization
+  flutter_localizations:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+  build_runner: ^2.4.7
+  drift_dev: ^2.14.1
+  retrofit_generator: ^8.0.6
+  json_annotation: ^4.8.1
+  json_serializable: ^6.7.1
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/fonts/
+  
+  fonts:
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Roboto-Regular.ttf
+        - asset: assets/fonts/Roboto-Bold.ttf
+          weight: 700

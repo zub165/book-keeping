@@ -15,7 +15,7 @@ class FamilyMemberSerializer(serializers.ModelSerializer):
     """Serializer for FamilyMember model"""
     class Meta:
         model = FamilyMember
-        fields = ['id', 'name', 'relation', 'email', 'is_registered', 'created_at', 'updated_at']
+        fields = ['id', 'name', 'relation', 'email', 'is_registered', 'send_reports', 'role', 'can_view_all', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
 
 
